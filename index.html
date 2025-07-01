@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionnaire de Continuité de Projet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            height: 100vh;
+            gap: 1px;
+            background: #1a1a1a;
+        }
+
+        /* Zone principale */
+        .main-area {
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            padding: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .project-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #4ade80;
+        }
+
+        .status-indicator.disconnected {
+            background: #ef4444;
+        }
+
+        .status-indicator.syncing {
+            background: #f59e0b;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Zone de travail */
+        .work-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .work-content {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            min-height: 100%;
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .project-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .project-title h2 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .edit-title {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 5px;
+            transition: color 0.3s;
+        }
+
+        .edit-title:hover {
+            color: #fff;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 400px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        /* Panneau latéral */
+        .sidebar {
+            background: #1a1a1a;
+            border-left: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .sidebar-header h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Onglets */
+        .tabs {
+            display: flex;
+            background: #0a0a0a;
+            border-bottom: 1px solid #333;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        .tab-content {
+            padding: 20px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cartes d'insights */
+        .insight-card {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .insight-card:hover {
+            background: rgba(59, 130, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .insight-type {
+            font-size: 12px;
+            color: #3b82f6;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .insight-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .insight-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* Boutons */
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .secondary-btn {
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+
+        .secondary-btn:hover {
+            background: #3a3a3a;
+            box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .danger-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .danger-btn:hover {
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Indicateurs de santé */
+        .health-indicators {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .health-card {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #333;
+            transition: all 0.3s;
+        }
+
+        .health-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .health-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0;
+            background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .health-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Progress bars */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #2a2a2a;
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%);
+            transition: width 0.3s ease;
+        }
+
+        /* Timeline */
+        .timeline {
+            margin-top: 30px;
+            padding: 20px;
+            background: #0a0a0a;
+            border-radius: 8px;
+        }
+
+        .timeline h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .timeline-item {
+            padding: 15px 0;
+            border-left: 2px solid #333;
+            padding-left: 20px;
+            margin-left: 10px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .timeline-item:hover {
+            border-left-color: #3b82f6;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 20px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #3b82f6;
+            transition: all 0.3s;
+        }
+
+        .timeline-item:hover::before {
+            transform: scale(1.3);
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .timeline-content {
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 15px 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-width: 350px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .notification.warning {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .notification.error {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #aaa;
+            font-weight: 500;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .input-group small {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* API Key Setup */
+        .setup-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .setup-card {
+            background: #1a1a1a;
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .setup-card h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .setup-card p {
+            color: #aaa;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        /* Liste des projets */
+        .project-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .project-item {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .project-item:hover {
+            border-color: #3b82f6;
+            transform: translateX(5px);
+        }
+
+        .project-item.active {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .project-meta {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: fixed;
+                right: -320px;
+                top: 0;
+                bottom: 0;
+                width: 320px;
+                transition: right 0.3s ease;
+                z-index: 100;
+            }
+            
+            .sidebar.open {
+                right: 0;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background: #3b82f6;
+                color: white;
+                border: none;
+                box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+                z-index: 99;
+            }
+
+            .health-indicators {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Loader */
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Dark scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Setup API Key (première utilisation) -->
+    <div id="setupContainer" class="setup-container" style="display: none;">
+        <div class="setup-card">
+            <h1>Bienvenue ! 👋</h1>
+            <p>Pour commencer, entrez votre clé API JSONBin.<br>
+            Elle sera stockée de manière sécurisée dans votre navigateur.</p>
+            
+            <div class="input-group" style="text-align: left;">
+                <label>Clé API JSONBin</label>
+                <input type="password" id="setupApiKey" placeholder="$2a$10$...">
+                <small>Votre clé ne sera jamais partagée et reste locale</small>
+            </div>
+            
+            <button onclick="saveApiKey()">Commencer</button>
+        </div>
+    </div>
+
+    <!-- Interface principale -->
+    <div class="container">
+        <!-- Zone principale -->
+        <div class="main-area">
+            <div class="header">
+                <h1>Gestionnaire de Continuité de Projet</h1>
+                <div class="project-info">
+                    <div class="info-item">
+                        <div id="statusIndicator" class="status-indicator disconnected"></div>
+                        <span id="syncStatus">Non connecté</span>
+                    </div>
+                    <div class="info-item">
+                        <span>Version: <strong id="projectVersion">V1</strong></span>
+                    </div>
+                    <div class="info-item">
+                        <span>Saturation: <strong id="saturationLevel">0%</strong></span>
+                    </div>
+                    <div class="info-item">
+                        <span>Dernier save: <strong id="lastSave">--:--</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="work-area">
+                <div class="work-content">
+                    <div class="project-header">
+                        <div class="project-title">
+                            <h2 id="projectName">Nouveau Projet</h2>
+                            <button class="edit-title" onclick="editProjectName()">✏️</button>
+                        </div>
+                        <div>
+                            <button class="secondary-btn" onclick="showProjectList()">📁 Projets</button>
+                        </div>
+                    </div>
+                    
+                    <div class="actions">
+                        <button onclick="saveToJsonBin()">💾 Sauvegarder</button>
+                        <button onclick="loadFromJsonBin()">🔄 Rafraîchir</button>
+                        <button class="secondary-btn" onclick="exportProject()">📤 Exporter</button>
+                        <button class="secondary-btn" onclick="showImportModal()">📥 Importer</button>
+                        <button class="secondary-btn" onclick="createNewProject()">➕ Nouveau</button>
+                        <button class="danger-btn" onclick="migrateVersion()">🚀 Migrer Version</button>
+                    </div>
+
+                    <div class="health-indicators">
+                        <div class="health-card">
+                            <div class="health-label">Décisions</div>
+                            <div class="health-value" id="decisionCount">0</div>
+                            <div class="progress-bar">
+                                <div id="decisionProgress" class="progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="health-card">
+                            <div class="health-label">Tâches</div>
+                            <div class="health-value" id="taskCount">0</div>
+                            <div class="progress-bar">
+                                <div id="taskProgress" class="progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="health-card">
+                            <div class="health-label">Intégrité</div>
+                            <div class="health-value" id="integrityScore">100%</div>
+                            <div class="progress-bar">
+                                <div id="integrityProgress" class="progress-fill" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="health-card">
+                            <div class="health-label">Mots</div>
+                            <div class="health-value" id="wordCount">0</div>
+                            <div class="progress-bar">
+                                <div id="wordProgress" class="progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 30px; margin-bottom: 15px;">Zone de travail continue</h3>
+                    <textarea id="workArea" placeholder="Commencez à taper ici... Tout sera automatiquement sauvegardé.
+
+Conseils :
+- Utilisez @decision pour marquer une décision importante
+- Utilisez @task pour créer une tâche
+- Utilisez @milestone pour marquer une étape clé
+- Le système détecte automatiquement la saturation et suggère la migration"></textarea>
+
+                    <div class="timeline">
+                        <h3>Historique récent</h3>
+                        <div id="timeline">
+                            <p style="color: #666;">Aucune activité récente</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panneau Assistant -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Assistant & Insights</h3>
+                <p style="font-size: 12px; color: #666; margin-top: 5px;">Analyse en temps réel</p>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('insights')">💡 Insights</button>
+                <button class="tab" onclick="switchTab('audit')">🔍 Audit</button>
+                <button class="tab" onclick="switchTab('versions')">📚 Versions</button>
+            </div>
+
+            <div class="sidebar-content">
+                <div id="insightsTab" class="tab-content active">
+                    <div id="insightsContent">
+                        <div class="insight-card">
+                            <div class="insight-type">💡 Conseil</div>
+                            <div class="insight-content">Commencez par définir les objectifs principaux de votre projet.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="auditTab" class="tab-content">
+                    <div id="auditContent">
+                        <h4>Rapport d'audit</h4>
+                        <p style="color: #666; margin-top: 10px;">L'audit vérifie l'intégrité de vos données.</p>
+                        <button onclick="runAudit()" style="margin-top: 15px;">Lancer l'audit</button>
+                    </div>
+                </div>
+
+                <div id="versionsTab" class="tab-content">
+                    <div id="versionsContent">
+                        <h4>Historique des versions</h4>
+                        <p style="color: #666; margin-top: 10px;">Les versions précédentes apparaîtront ici.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bouton menu mobile -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()" style="display: none;">
+        ☰
+    </button>
+
+    <!-- Notifications -->
+    <div id="notification" class="notification">
+        <span id="notificationText"></span>
+    </div>
+
+    <!-- Modal Import -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <h2>Importer un projet</h2>
+            <div class="input-group">
+                <label>Collez vos données JSON ici</label>
+                <textarea id="importData" style="min-height: 200px;" placeholder='{"project": {...}}'></textarea>
+            </div>
+            <div class="actions">
+                <button onclick="importProject()">Importer</button>
+                <button class="secondary-btn" onclick="closeModal('importModal')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Liste des projets -->
+    <div id="projectListModal" class="modal">
+        <div class="modal-content">
+            <h2>Vos projets</h2>
+            <div class="project-list" id="projectList">
+                <p style="color: #666;">Chargement...</p>
+            </div>
+            <div class="actions" style="margin-top: 20px;">
+                <button onclick="createNewProject()">➕ Nouveau projet</button>
+                <button class="secondary-btn" onclick="closeModal('projectListModal')">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration JSONBin
+        const CONFIG = {
+            JSONBIN_BIN_ID: '68644c5a8960c979a5b577ba',
+            JSONBIN_BASE_URL: 'https://api.jsonbin.io/v3',
+            COLLECTION_ID: '68644cdd8561e97a502fdfd4',
+            
+            // Récupération sécurisée de l'API Key
+            getApiKey: function() {
+                return localStorage.getItem('jsonbin_api_key') || '';
+            },
+            
+            // Paramètres de l'app
+            APP: {
+                name: 'Gestionnaire de Continuité de Projet',
+                version: '1.0.0',
+                autoSaveInterval: 5 * 60 * 1000, // 5 minutes
+                maxHistoryItems: 100,
+                saturationThreshold: 80,
+                maxWords: 50000
+            }
+        };
+
+        // État global
+        let state = {
+            connected: false,
+            syncing: false,
+            autoSaveTimer: null,
+            currentProjectId: null,
+            lastSyncTime: null
+        };
+
+        // Structure des données du projet
+        let projectData = {
+            projects: {},
+            currentProject: null,
+            settings: {
+                autoSaveInterval: CONFIG.APP.autoSaveInterval,
+                maxVersions: 10,
+                theme: 'dark'
+            },
+            metadata: {
+                version: CONFIG.APP.version,
+                lastSync: null,
+                created: new Date().toISOString()
+            }
+        };
+
+        // Structure d'un projet
+        function createNewProjectStructure(name = 'Nouveau Projet') {
+            return {
+                id: generateId(),
+                name: name,
+                version: 'V1',
+                created: new Date().toISOString(),
+                lastModified: new Date().toISOString(),
+                content: {
+                    workArea: '',
+                    decisions: [],
+                    tasks: [],
+                    milestones: [],
+                    insights: [],
+                    history: []
+                },
+                stats: {
+                    saturation: 0,
+                    integrity: 100,
+                    wordCount: 0,
+                    editCount: 0
+                },
+                versions: []
+            };
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            checkApiKey();
+        });
+
+        // Vérification de l'API Key
+        function checkApiKey() {
+            const apiKey = CONFIG.getApiKey();
+            if (!apiKey) {
+                document.getElementById('setupContainer').style.display = 'flex';
+            } else {
+                document.getElementById('setupContainer').style.display = 'none';
+                initialize();
+            }
+        }
+
+        // Sauvegarde de l'API Key
+        function saveApiKey() {
+            const apiKey = document.getElementById('setupApiKey').value.trim();
+            if (!apiKey) {
+                showNotification('Veuillez entrer votre clé API', 'warning');
+                return;
+            }
+            
+            localStorage.setItem('jsonbin_api_key', apiKey);
+            document.getElementById('setupContainer').style.display = 'none';
+            showNotification('Configuration enregistrée !', 'success');
+            initialize();
+        }
+
+        // Initialisation de l'application
+        async function initialize() {
+            initializeEventListeners();
+            await loadFromJsonBin();
+            startAutoSave();
+            updateUI();
+        }
+
+        // Event Listeners
+        function initializeEventListeners() {
+            const workArea = document.getElementById('workArea');
+            workArea.addEventListener('input', debounce(handleWorkAreaChange, 1000));
+            
+            // Raccourcis clavier
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    if (e.key === 's') {
+                        e.preventDefault();
+                        saveToJsonBin();
+                    }
+                }
+            });
+        }
+
+        // Gestion des changements
+        function handleWorkAreaChange() {
+            if (!projectData.currentProject) return;
+            
+            const project = projectData.projects[projectData.currentProject];
+            project.content.workArea = document.getElementById('workArea').value;
+            project.lastModified = new Date().toISOString();
+            project.stats.editCount++;
+            
+            // Analyse du contenu
+            analyzeContent(project);
+            updateStats(project);
+            
+            // Détection des marqueurs
+            detectMarkers(project);
+            
+            // Sauvegarde locale
+            saveToLocalStorage();
+            
+            // Mise à jour UI
+            updateUI();
+        }
+
+        // Analyse du contenu
+        function analyzeContent(project) {
+            const content = project.content.workArea;
+            
+            // Comptage des mots
+            project.stats.wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+            
+            // Calcul de la saturation
+            const totalElements = project.content.decisions.length + 
+                                project.content.tasks.length + 
+                                project.content.history.length;
+            
+            project.stats.saturation = Math.min(
+                Math.floor((project.stats.wordCount / CONFIG.APP.maxWords) * 100),
+                Math.floor((totalElements / 200) * 100)
+            );
+            
+            // Alerte saturation
+            if (project.stats.saturation >= CONFIG.APP.saturationThreshold) {
+                addInsight({
+                    type: 'alert',
+                    text: `Saturation à ${project.stats.saturation}% - Pensez à migrer vers ${getNextVersion(project.version)}`,
+                    priority: 'high'
+                });
+            }
+        }
+
+        // Détection des marqueurs dans le texte
+        function detectMarkers(project) {
+            const content = project.content.workArea;
+            const lines = content.split('\n');
+            
+            lines.forEach(line => {
+                if (line.includes('@decision') && !project.content.decisions.find(d => d.text === line)) {
+                    project.content.decisions.push({
+                        id: generateId(),
+                        text: line.replace('@decision', '').trim(),
+                        timestamp: new Date().toISOString()
+                    });
+                    addToHistory(project, 'decision', 'Nouvelle décision ajoutée');
+                }
+                
+                if (line.includes('@task') && !project.content.tasks.find(t => t.text === line)) {
+                    project.content.tasks.push({
+                        id: generateId(),
+                        text: line.replace('@task', '').trim(),
+                        completed: false,
+                        timestamp: new Date().toISOString()
+                    });
+                    addToHistory(project, 'task', 'Nouvelle tâche créée');
+                }
+                
+                if (line.includes('@milestone') && !project.content.milestones.find(m => m.text === line)) {
+                    project.content.milestones.push({
+                        id: generateId(),
+                        text: line.replace('@milestone', '').trim(),
+                        timestamp: new Date().toISOString()
+                    });
+                    addToHistory(project, 'milestone', 'Jalon important atteint');
+                    addInsight({
+                        type: 'milestone',
+                        text: 'Félicitations ! Nouveau jalon atteint 🎉'
+                    });
+                }
+            });
+        }
+
+        // JSONBin API
+        async function saveToJsonBin() {
+            if (!projectData.currentProject) {
+                showNotification('Aucun projet actif', 'warning');
+                return;
+            }
+
+            updateSyncStatus('syncing');
+            
+            try {
+                const response = await fetch(`${CONFIG.JSONBIN_BASE_URL}/b/${CONFIG.JSONBIN_BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': CONFIG.getApiKey(),
+                        'X-Collection-Id': CONFIG.COLLECTION_ID
+                    },
+                    body: JSON.stringify(projectData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur ${response.status}`);
+                }
+
+                projectData.metadata.lastSync = new Date().toISOString();
+                state.lastSyncTime = new Date();
+                
+                updateSyncStatus('connected');
+                updateLastSaveTime();
+                showNotification('Projet sauvegardé !', 'success');
+                
+            } catch (error) {
+                console.error('Erreur de sauvegarde:', error);
+                updateSyncStatus('disconnected');
+                showNotification('Erreur de sauvegarde: ' + error.message, 'error');
+            }
+        }
+
+        async function loadFromJsonBin() {
+            updateSyncStatus('syncing');
+            
+            try {
+                const response = await fetch(`${CONFIG.JSONBIN_BASE_URL}/b/${CONFIG.JSONBIN_BIN_ID}/latest`, {
+                    headers: {
+                        'X-Master-Key': CONFIG.getApiKey()
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur ${response.status}`);
+                }
+
+                const data = await response.json();
+                projectData = data.record;
+                
+                // Si pas de projet actuel, créer un nouveau
+                if (!projectData.currentProject || Object.keys(projectData.projects).length === 0) {
+                    const newProject = createNewProjectStructure();
+                    projectData.projects[newProject.id] = newProject;
+                    projectData.currentProject = newProject.id;
+                }
+                
+                state.lastSyncTime = new Date();
+                updateSyncStatus('connected');
+                updateUI();
+                showNotification('Données chargées', 'success');
+                
+            } catch (error) {
+                console.error('Erreur de chargement:', error);
+                updateSyncStatus('disconnected');
+                
+                // Charger depuis localStorage si disponible
+                loadFromLocalStorage();
+                
+                // Si rien en local, créer nouveau projet
+                if (!projectData.currentProject) {
+                    const newProject = createNewProjectStructure();
+                    projectData.projects[newProject.id] = newProject;
+                    projectData.currentProject = newProject.id;
+                    updateUI();
+                }
+            }
+        }
+
+        // Sauvegarde automatique
+        function startAutoSave() {
+            state.autoSaveTimer = setInterval(() => {
+                if (hasUnsavedChanges()) {
+                    saveToJsonBin();
+                }
+            }, CONFIG.APP.autoSaveInterval);
+        }
+
+        function hasUnsavedChanges() {
+            if (!state.lastSyncTime || !projectData.currentProject) return false;
+            
+            const project = projectData.projects[projectData.currentProject];
+            const lastModified = new Date(project.lastModified);
+            
+            return lastModified > state.lastSyncTime;
+        }
+
+        // Gestion des projets
+        function createNewProject() {
+            const name = prompt('Nom du nouveau projet:', 'Nouveau Projet');
+            if (!name) return;
+            
+            const newProject = createNewProjectStructure(name);
+            projectData.projects[newProject.id] = newProject;
+            projectData.currentProject = newProject.id;
+            
+            saveToLocalStorage();
+            updateUI();
+            showNotification('Nouveau projet créé', 'success');
+            closeModal('projectListModal');
+        }
+
+        function showProjectList() {
+            const modal = document.getElementById('projectListModal');
+            const list = document.getElementById('projectList');
+            
+            const projects = Object.values(projectData.projects);
+            
+            if (projects.length === 0) {
+                list.innerHTML = '<p style="color: #666;">Aucun projet</p>';
+            } else {
+                list.innerHTML = projects.map(project => `
+                    <div class="project-item ${project.id === projectData.currentProject ? 'active' : ''}" 
+                         onclick="switchProject('${project.id}')">
+                        <div>
+                            <strong>${project.name}</strong>
+                            <div class="project-meta">
+                                ${project.version} • ${project.stats.wordCount} mots • 
+                                Modifié ${formatRelativeTime(project.lastModified)}
+                            </div>
+                        </div>
+                        <button class="secondary-btn" onclick="event.stopPropagation(); deleteProject('${project.id}')">🗑️</button>
+                    </div>
+                `).join('');
+            }
+            
+            modal.classList.add('active');
+        }
+
+        function switchProject(projectId) {
+            projectData.currentProject = projectId;
+            updateUI();
+            closeModal('projectListModal');
+            showNotification('Projet chargé', 'success');
+        }
+
+        function deleteProject(projectId) {
+            if (!confirm('Supprimer ce projet ?')) return;
+            
+            delete projectData.projects[projectId];
+            
+            if (projectData.currentProject === projectId) {
+                const remainingProjects = Object.keys(projectData.projects);
+                projectData.currentProject = remainingProjects[0] || null;
+            }
+            
+            saveToLocalStorage();
+            showProjectList();
+        }
+
+        // Migration de version
+        function migrateVersion() {
+            if (!projectData.currentProject) return;
+            
+            const project = projectData.projects[projectData.currentProject];
+            
+            if (project.stats.saturation < 50) {
+                showNotification('Migration recommandée à partir de 50% de saturation', 'warning');
+                return;
+            }
+            
+            const nextVersion = getNextVersion(project.version);
+            
+            if (confirm(`Migrer de ${project.version} vers ${nextVersion} ?`)) {
+                // Sauvegarder la version actuelle
+                project.versions.push({
+                    version: project.version,
+                    snapshot: JSON.parse(JSON.stringify(project)),
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Créer nouvelle version
+                project.version = nextVersion;
+                project.stats.saturation = 0;
+                project.content.history = [];
+                
+                addToHistory(project, 'migration', `Migration vers ${nextVersion}`);
+                addInsight({
+                    type: 'milestone',
+                    text: `Projet migré vers ${nextVersion} avec succès !`
+                });
+                
+                saveToLocalStorage();
+                updateUI();
+                showNotification(`Migration vers ${nextVersion} réussie !`, 'success');
+            }
+        }
+
+        function getNextVersion(currentVersion) {
+            const match = currentVersion.match(/V(\d+)/);
+            if (match) {
+                const num = parseInt(match[1]);
+                return `V${num + 1}`;
+            }
+            return 'V2';
+        }
+
+        // Import/Export
+        function exportProject() {
+            if (!projectData.currentProject) {
+                showNotification('Aucun projet à exporter', 'warning');
+                return;
+            }
+            
+            const project = projectData.projects[projectData.currentProject];
+            const exportData = {
+                project: project,
+                exported: new Date().toISOString(),
+                version: CONFIG.APP.version
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${project.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('Projet exporté', 'success');
+        }
+
+        function showImportModal() {
+            document.getElementById('importModal').classList.add('active');
+        }
+
+        function importProject() {
+            try {
+                const data = document.getElementById('importData').value;
+                const imported = JSON.parse(data);
+                
+                if (!imported.project) {
+                    throw new Error('Format invalide');
+                }
+                
+                const project = imported.project;
+                project.id = generateId(); // Nouvel ID pour éviter les conflits
+                project.imported = new Date().toISOString();
+                
+                projectData.projects[project.id] = project;
+                projectData.currentProject = project.id;
+                
+                saveToLocalStorage();
+                updateUI();
+                closeModal('importModal');
+                showNotification('Projet importé avec succès', 'success');
+                
+            } catch (error) {
+                showNotification('Erreur d\'import: ' + error.message, 'error');
+            }
+        }
+
+        // Audit
+        function runAudit() {
+            if (!projectData.currentProject) return;
+            
+            const project = projectData.projects[projectData.currentProject];
+            const auditResults = [];
+            
+            // Vérifications
+            if (project.stats.wordCount === 0) {
+                auditResults.push('⚠️ Le projet est vide');
+            }
+            
+            if (project.content.decisions.length === 0) {
+                auditResults.push('💡 Aucune décision documentée');
+            }
+            
+            if (project.content.tasks.filter(t => !t.completed).length > 10) {
+                auditResults.push('📋 Plus de 10 tâches en attente');
+            }
+            
+            if (project.stats.saturation > 70) {
+                auditResults.push('🚨 Saturation élevée - Migration recommandée');
+            }
+            
+            // Calcul du score d'intégrité
+            let integrityScore = 100;
+            if (project.stats.wordCount === 0) integrityScore -= 20;
+            if (project.content.decisions.length === 0) integrityScore -= 10;
+            if (project.stats.saturation > 80) integrityScore -= 20;
+            
+            project.stats.integrity = Math.max(0, integrityScore);
+            
+            // Affichage des résultats
+            const auditContent = document.getElementById('auditContent');
+            auditContent.innerHTML = `
+                <h4>Rapport d'audit</h4>
+                <p style="margin: 15px 0;">Score d'intégrité: <strong>${project.stats.integrity}%</strong></p>
+                ${auditResults.length > 0 ? 
+                    '<ul style="list-style: none; padding: 0;">' + 
+                    auditResults.map(r => `<li style="margin: 10px 0;">${r}</li>`).join('') + 
+                    '</ul>' : 
+                    '<p style="color: #4ade80;">✅ Aucun problème détecté</p>'
+                }
+                <button onclick="runAudit()" style="margin-top: 15px;">Relancer l'audit</button>
+            `;
+            
+            updateUI();
+        }
+
+        // UI Updates
+        function updateUI() {
+            if (!projectData.currentProject) return;
+            
+            const project = projectData.projects[projectData.currentProject];
+            
+            // Infos projet
+            document.getElementById('projectName').textContent = project.name;
+            document.getElementById('projectVersion').textContent = project.version;
+            document.getElementById('saturationLevel').textContent = project.stats.saturation + '%';
+            
+            // Zone de travail
+            document.getElementById('workArea').value = project.content.workArea || '';
+            
+            // Stats
+            document.getElementById('decisionCount').textContent = project.content.decisions.length;
+            document.getElementById('taskCount').textContent = project.content.tasks.length;
+            document.getElementById('integrityScore').textContent = project.stats.integrity + '%';
+            document.getElementById('wordCount').textContent = formatNumber(project.stats.wordCount);
+            
+            // Progress bars
+            document.getElementById('decisionProgress').style.width = Math.min(project.content.decisions.length * 10, 100) + '%';
+            document.getElementById('taskProgress').style.width = Math.min(project.content.tasks.length * 10, 100) + '%';
+            document.getElementById('integrityProgress').style.width = project.stats.integrity + '%';
+            document.getElementById('wordProgress').style.width = (project.stats.wordCount / CONFIG.APP.maxWords * 100) + '%';
+            
+            // Timeline
+            updateTimeline(project);
+            
+            // Insights
+            updateInsights(project);
+            
+            // Versions
+            updateVersionsTab(project);
+        }
+
+        function updateTimeline(project) {
+            const timeline = document.getElementById('timeline');
+            const recentHistory = project.content.history.slice(-5).reverse();
+            
+            if (recentHistory.length === 0) {
+                timeline.innerHTML = '<p style="color: #666;">Aucune activité récente</p>';
+                return;
+            }
+            
+            timeline.innerHTML = recentHistory.map(item => `
+                <div class="timeline-item">
+                    <div class="timeline-time">${formatRelativeTime(item.timestamp)}</div>
+                    <div class="timeline-content">${getActionIcon(item.action)} ${item.description}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateInsights(project) {
+            const insightsContent = document.getElementById('insightsContent');
+            const recentInsights = project.content.insights.slice(-5).reverse();
+            
+            if (recentInsights.length === 0) {
+                insightsContent.innerHTML = `
+                    <div class="insight-card">
+                        <div class="insight-type">💡 Conseil</div>
+                        <div class="insight-content">Utilisez @decision, @task et @milestone pour structurer votre projet.</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            insightsContent.innerHTML = recentInsights.map(insight => `
+                <div class="insight-card">
+                    <div class="insight-type">${getInsightIcon(insight.type)} ${insight.type.toUpperCase()}</div>
+                    <div class="insight-content">${insight.text}</div>
+                    <div class="insight-time">${formatRelativeTime(insight.timestamp)}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateVersionsTab(project) {
+            const versionsContent = document.getElementById('versionsContent');
+            
+            if (project.versions.length === 0) {
+                versionsContent.innerHTML = `
+                    <h4>Historique des versions</h4>
+                    <p style="color: #666; margin-top: 10px;">Aucune version précédente.</p>
+                `;
+                return;
+            }
+            
+            versionsContent.innerHTML = `
+                <h4>Historique des versions</h4>
+                ${project.versions.map(v => `
+                    <div class="project-item" style="margin-top: 10px;">
+                        <div>
+                            <strong>${v.version}</strong>
+                            <div class="project-meta">
+                                ${v.snapshot.stats.wordCount} mots • 
+                                Archivé ${formatRelativeTime(v.timestamp)}
+                            </div>
+                        </div>
+                        <button class="secondary-btn" onclick="restoreVersion('${v.version}')">Restaurer</button>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // Helpers
+        function addToHistory(project, action, description) {
+            project.content.history.push({
+                action,
+                description,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Limiter l'historique
+            if (project.content.history.length > CONFIG.APP.maxHistoryItems) {
+                project.content.history = project.content.history.slice(-CONFIG.APP.maxHistoryItems);
+            }
+        }
+
+        function addInsight(insight) {
+            if (!projectData.currentProject) return;
+            
+            const project = projectData.projects[projectData.currentProject];
+            project.content.insights.push({
+                ...insight,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        function updateStats(project) {
+            // Mise à jour diverses stats
+            const completedTasks = project.content.tasks.filter(t => t.completed).length;
+            const totalTasks = project.content.tasks.length;
+            
+            if (totalTasks > 0 && completedTasks === totalTasks) {
+                addInsight({
+                    type: 'achievement',
+                    text: 'Toutes les tâches sont complétées ! 🎉'
+                });
+            }
+        }
+
+        // UI Helpers
+        function editProjectName() {
+            if (!projectData.currentProject) return;
+            
+            const project = projectData.projects[projectData.currentProject];
+            const newName = prompt('Nouveau nom du projet:', project.name);
+            
+            if (newName && newName !== project.name) {
+                project.name = newName;
+                project.lastModified = new Date().toISOString();
+                addToHistory(project, 'rename', `Projet renommé en "${newName}"`);
+                saveToLocalStorage();
+                updateUI();
+            }
+        }
+
+        function switchTab(tabName) {
+            // Tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        }
+
+        function showNotification(text, type = 'info') {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            
+            notification.className = `notification ${type}`;
+            notificationText.textContent = text;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function updateSyncStatus(status) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('syncStatus');
+            
+            indicator.className = `status-indicator ${status}`;
+            
+            switch(status) {
+                case 'connected':
+                    statusText.textContent = 'Synchronisé';
+                    state.connected = true;
+                    break;
+                case 'disconnected':
+                    statusText.textContent = 'Hors ligne';
+                    state.connected = false;
+                    break;
+                case 'syncing':
+                    statusText.textContent = 'Synchronisation...';
+                    state.syncing = true;
+                    break;
+            }
+        }
+
+        function updateLastSaveTime() {
+            const time = state.lastSyncTime ? state.lastSyncTime.toLocaleTimeString() : '--:--';
+            document.getElementById('lastSave').textContent = time;
+        }
+
+        // Local Storage
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('projectData', JSON.stringify(projectData));
+            } catch (e) {
+                console.error('Erreur sauvegarde locale:', e);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('projectData');
+                if (saved) {
+                    projectData = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error('Erreur chargement local:', e);
+            }
+        }
+
+        // Utility functions
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function formatRelativeTime(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return 'À l\'instant';
+            if (minutes < 60) return `Il y a ${minutes} min`;
+            if (hours < 24) return `Il y a ${hours}h`;
+            if (days < 7) return `Il y a ${days}j`;
+            
+            return date.toLocaleDateString();
+        }
+
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        }
+
+        function getActionIcon(action) {
+            const icons = {
+                edit: '✏️',
+                decision: '🎯',
+                task: '📋',
+                milestone: '🏆',
+                migration: '🚀',
+                rename: '🏷️'
+            };
+            return icons[action] || '📌';
+        }
+
+        function getInsightIcon(type) {
+            const icons = {
+                decision: '🎯',
+                alert: '⚠️',
+                suggestion: '💡',
+                milestone: '🏆',
+                achievement: '🎉',
+                tip: '💡'
+            };
+            return icons[type] || '📌';
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Responsive
+        if (window.innerWidth <= 768) {
+            document.querySelector('.mobile-menu-btn').style.display = 'block';
+        }
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                document.querySelector('.mobile-menu-btn').style.display = 'block';
+            } else {
+                document.querySelector('.mobile-menu-btn').style.display = 'none';
+                document.querySelector('.sidebar').classList.remove('open');
+            }
+        });
+
+        // Auto refresh time
+        setInterval(updateLastSaveTime, 60000);
+    </script>
+</body>
+</html>
